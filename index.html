@@ -62,7 +62,7 @@
     }
   </style>
 </head>
-<body>
+<body><div class="saldo" id="stats"></div>
 
 <h1>LUCA APUESTA ⚽</h1>
 
@@ -74,7 +74,37 @@
 <h2>Mis Apuestas</h2>
 <div id="bets"></div>
 
-<script>
+<script>function calcularStats() {
+  let totalApostado = 0;
+  let totalGanado = 0;
+  let ganadas = 0;
+  let perdidas = 0;
+
+  apuestas.forEach(a => {
+    totalApostado += a.monto;
+
+    if (a.estado === "ganada") {
+      totalGanado += parseFloat(a.ganancia);
+      ganadas++;
+    } else if (a.estado === "perdida") {
+      perdidas++;
+    }
+  });
+
+  const totalJugadas = ganadas + perdidas;
+  const winrate = totalJugadas > 0 
+    ? ((ganadas / totalJugadas) * 100).toFixed(1) 
+    : 0;
+
+  const profit = (totalGanado - totalApostado).toFixed(2);
+
+  document.getElementById("stats").innerHTML = `
+    Apostado: $${totalApostado} |
+    Ganado: $${totalGanado} |
+    Profit: $${profit} |
+    Winrate: ${winrate}%
+  `;
+}
 const partidos = [
   { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1], prob: 72 },
   { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5], prob: 65 },
@@ -211,6 +241,7 @@ function renderApuestas() {
 actualizarSaldo();
 renderPartidos();
 renderApuestas();
+calcularStats();
 </script>
 
 </body>
