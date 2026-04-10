@@ -14,6 +14,15 @@
       text-align: center;
       color: #00ffcc;
     }
+    .saldo {
+      background: #00ffcc;
+      color: black;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
     .match, .bet {
       background: #1a1a1a;
       padding: 15px;
@@ -47,6 +56,8 @@
 
 <h1>LUCA APUESTA ⚽</h1>
 
+<div class="saldo" id="saldo"></div>
+
 <h2>Partidos</h2>
 <div id="matches"></div>
 
@@ -60,10 +71,24 @@ const partidos = [
   { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9], prob: 55 }
 ];
 
+// SALDO INICIAL
+let saldo = localStorage.getItem("saldo");
+if (!saldo) {
+  saldo = 1000;
+  localStorage.setItem("saldo", saldo);
+} else {
+  saldo = parseFloat(saldo);
+}
+
 let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
 
 const matchesDiv = document.getElementById("matches");
 const betsDiv = document.getElementById("bets");
+const saldoDiv = document.getElementById("saldo");
+
+function actualizarSaldo() {
+  saldoDiv.innerHTML = `Saldo: $${saldo}`;
+}
 
 function getRecomendacion(prob) {
   if (prob >= 70) return "🔥 Apuesta fuerte";
@@ -105,6 +130,14 @@ function apostar(partido, tipo, cuota) {
     return;
   }
 
+  if (monto > saldo) {
+    alert("Saldo insuficiente");
+    return;
+  }
+
+  saldo -= monto;
+  localStorage.setItem("saldo", saldo);
+
   const ganancia = (monto * cuota).toFixed(2);
 
   const apuesta = {
@@ -118,6 +151,7 @@ function apostar(partido, tipo, cuota) {
   apuestas.push(apuesta);
   localStorage.setItem("apuestas", JSON.stringify(apuestas));
 
+  actualizarSaldo();
   renderApuestas();
   montoInput.value = "";
 }
@@ -140,6 +174,8 @@ function renderApuestas() {
   });
 }
 
+// INICIALIZAR
+actualizarSaldo();
 renderPartidos();
 renderApuestas();
 </script>
