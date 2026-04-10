@@ -34,9 +34,19 @@
       margin: 5px;
       border: none;
       border-radius: 8px;
+      font-weight: bold;
+    }
+    .btn-apostar {
       background: #00ffcc;
       color: black;
-      font-weight: bold;
+    }
+    .ganar {
+      background: green;
+      color: white;
+    }
+    .perder {
+      background: red;
+      color: white;
     }
     input {
       padding: 10px;
@@ -71,15 +81,8 @@ const partidos = [
   { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9], prob: 55 }
 ];
 
-// SALDO INICIAL
-let saldo = localStorage.getItem("saldo");
-if (!saldo) {
-  saldo = 1000;
-  localStorage.setItem("saldo", saldo);
-} else {
-  saldo = parseFloat(saldo);
-}
-
+// SALDO
+let saldo = parseFloat(localStorage.getItem("saldo")) || 1000;
 let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
 
 const matchesDiv = document.getElementById("matches");
@@ -112,9 +115,9 @@ function renderPartidos() {
       <input type="number" id="monto-${p.equipos}" placeholder="Monto $" />
       <br>
 
-      <button onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">Local (${p.cuotas[0]})</button>
-      <button onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">Empate (${p.cuotas[1]})</button>
-      <button onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">Visitante (${p.cuotas[2]})</button>
+      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">Local (${p.cuotas[0]})</button>
+      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">Empate (${p.cuotas[1]})</button>
+      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">Visitante (${p.cuotas[2]})</button>
     `;
 
     matchesDiv.appendChild(div);
@@ -145,7 +148,8 @@ function apostar(partido, tipo, cuota) {
     tipo,
     cuota,
     monto,
-    ganancia
+    ganancia,
+    estado: "pendiente"
   };
 
   apuestas.push(apuesta);
@@ -156,10 +160,29 @@ function apostar(partido, tipo, cuota) {
   montoInput.value = "";
 }
 
+function resolverApuesta(index, resultado) {
+  const apuesta = apuestas[index];
+
+  if (apuesta.estado !== "pendiente") return;
+
+  if (resultado === "ganada") {
+    saldo += parseFloat(apuesta.ganancia);
+    apuesta.estado = "ganada";
+  } else {
+    apuesta.estado = "perdida";
+  }
+
+  localStorage.setItem("saldo", saldo);
+  localStorage.setItem("apuestas", JSON.stringify(apuestas));
+
+  actualizarSaldo();
+  renderApuestas();
+}
+
 function renderApuestas() {
   betsDiv.innerHTML = "";
 
-  apuestas.forEach((a) => {
+  apuestas.forEach((a, i) => {
     const div = document.createElement("div");
     div.className = "bet";
 
@@ -167,14 +190,24 @@ function renderApuestas() {
       <p><strong>${a.partido}</strong></p>
       <p>${a.tipo} | Cuota: ${a.cuota}</p>
       <p>Monto: $${a.monto}</p>
-      <p>Ganancia potencial: $${a.ganancia}</p>
+      <p>Ganancia: $${a.ganancia}</p>
+      <p>Estado: ${a.estado}</p>
+
+      ${
+        a.estado === "pendiente"
+          ? `
+        <button class="ganar" onclick="resolverApuesta(${i}, 'ganada')">Gané</button>
+        <button class="perder" onclick="resolverApuesta(${i}, 'perdida')">Perdí</button>
+      `
+          : ""
+      }
     `;
 
     betsDiv.appendChild(div);
   });
 }
 
-// INICIALIZAR
+// INIT
 actualizarSaldo();
 renderPartidos();
 renderApuestas();
