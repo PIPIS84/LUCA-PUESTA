@@ -36,6 +36,11 @@
       border: none;
       margin-top: 10px;
     }
+    .ia {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #00ffcc;
+    }
   </style>
 </head>
 <body>
@@ -50,9 +55,9 @@
 
 <script>
 const partidos = [
-  { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1] },
-  { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5] },
-  { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9] }
+  { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1], prob: 72 },
+  { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5], prob: 65 },
+  { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9], prob: 55 }
 ];
 
 let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
@@ -60,17 +65,28 @@ let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
 const matchesDiv = document.getElementById("matches");
 const betsDiv = document.getElementById("bets");
 
+function getRecomendacion(prob) {
+  if (prob >= 70) return "🔥 Apuesta fuerte";
+  if (prob >= 60) return "⚠️ Riesgo medio";
+  return "❌ Evitar";
+}
+
 function renderPartidos() {
   matchesDiv.innerHTML = "";
 
   partidos.forEach((p) => {
+    const recomendacion = getRecomendacion(p.prob);
+
     const div = document.createElement("div");
     div.className = "match";
 
     div.innerHTML = `
       <h3>${p.equipos}</h3>
+      <p class="ia">Probabilidad: ${p.prob}% | ${recomendacion}</p>
+
       <input type="number" id="monto-${p.equipos}" placeholder="Monto $" />
       <br>
+
       <button onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">Local (${p.cuotas[0]})</button>
       <button onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">Empate (${p.cuotas[1]})</button>
       <button onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">Visitante (${p.cuotas[2]})</button>
