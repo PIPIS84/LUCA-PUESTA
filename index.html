@@ -14,7 +14,7 @@
       text-align: center;
       color: #00ffcc;
     }
-    .match {
+    .match, .bet {
       background: #1a1a1a;
       padding: 15px;
       margin: 10px 0;
@@ -35,7 +35,11 @@
 
 <h1>LUCA APUESTA ⚽</h1>
 
+<h2>Partidos</h2>
 <div id="matches"></div>
+
+<h2>Mis Apuestas</h2>
+<div id="bets"></div>
 
 <script>
 const partidos = [
@@ -44,31 +48,62 @@ const partidos = [
   { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9] }
 ];
 
-const container = document.getElementById("matches");
+const matchesDiv = document.getElementById("matches");
+const betsDiv = document.getElementById("bets");
 
-partidos.forEach((p) => {
-  const div = document.createElement("div");
-  div.className = "match";
+// Cargar apuestas guardadas
+let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
 
-  div.innerHTML = `
-    <h3>${p.equipos}</h3>
-    <button onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">
-      Local (${p.cuotas[0]})
-    </button>
-    <button onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">
-      Empate (${p.cuotas[1]})
-    </button>
-    <button onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">
-      Visitante (${p.cuotas[2]})
-    </button>
-  `;
+function renderPartidos() {
+  matchesDiv.innerHTML = "";
 
-  container.appendChild(div);
-});
+  partidos.forEach((p) => {
+    const div = document.createElement("div");
+    div.className = "match";
+
+    div.innerHTML = `
+      <h3>${p.equipos}</h3>
+      <button onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">Local (${p.cuotas[0]})</button>
+      <button onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">Empate (${p.cuotas[1]})</button>
+      <button onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">Visitante (${p.cuotas[2]})</button>
+    `;
+
+    matchesDiv.appendChild(div);
+  });
+}
 
 function apostar(partido, tipo, cuota) {
-  alert(`Apostaste en ${partido} → ${tipo} (Cuota ${cuota})`);
+  const apuesta = {
+    partido,
+    tipo,
+    cuota
+  };
+
+  apuestas.push(apuesta);
+  localStorage.setItem("apuestas", JSON.stringify(apuestas));
+
+  renderApuestas();
 }
+
+function renderApuestas() {
+  betsDiv.innerHTML = "";
+
+  apuestas.forEach((a) => {
+    const div = document.createElement("div");
+    div.className = "bet";
+
+    div.innerHTML = `
+      <p>${a.partido}</p>
+      <p>${a.tipo} - Cuota ${a.cuota}</p>
+    `;
+
+    betsDiv.appendChild(div);
+  });
+}
+
+// Inicializar
+renderPartidos();
+renderApuestas();
 </script>
 
 </body>
