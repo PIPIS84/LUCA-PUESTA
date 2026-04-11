@@ -11,9 +11,20 @@
 <h2>Saldo: $<span id="saldo">0</span></h2>
 
 <input type="number" id="monto" placeholder="Monto de apuesta">
-<button onclick="hacerApuesta()">Apostar</button>
 
-<h2>Historial</h2>
+<h2>⚽ Partidos disponibles</h2>
+
+<div>
+  <p>Barcelona vs Real Madrid (Cuota 2.0)</p>
+  <button onclick="apostarPartido('Barcelona vs Real Madrid', 2.0)">Apostar</button>
+</div>
+
+<div>
+  <p>Manchester City vs Liverpool (Cuota 1.8)</p>
+  <button onclick="apostarPartido('Manchester City vs Liverpool', 1.8)">Apostar</button>
+</div>
+
+<h2>📊 Historial</h2>
 <ul id="historial"></ul>
 
 <script type="module">
@@ -40,8 +51,8 @@ let saldo = localStorage.getItem("saldo")
 
 document.getElementById("saldo").innerText = saldo.toFixed(2);
 
-// 🚀 HACER APUESTA
-window.hacerApuesta = async function() {
+// ⚽ APOSTAR PARTIDO
+window.apostarPartido = async function(partido, cuota) {
   let monto = parseFloat(document.getElementById("monto").value);
 
   if (!monto || monto <= 0) {
@@ -57,37 +68,36 @@ window.hacerApuesta = async function() {
   saldo -= monto;
 
   localStorage.setItem("saldo", saldo);
-
   document.getElementById("saldo").innerText = saldo.toFixed(2);
 
-  guardarHistorialLocal(monto);
+  // Guardar historial local
+  let historial = JSON.parse(localStorage.getItem("historial")) || [];
+  historial.push({
+    partido: partido,
+    monto: monto,
+    fecha: new Date().toLocaleString()
+  });
+  localStorage.setItem("historial", JSON.stringify(historial));
+  mostrarHistorial();
 
-  // 🔥 GUARDAR EN FIREBASE
+  // 🔥 Guardar en Firebase
   try {
     await addDoc(collection(db, "apuestas"), {
+      partido: partido,
+      cuota: cuota,
       monto: monto,
-      fecha: new Date()
+      posible_ganancia: monto * cuota,
+      estado: "pendiente",
+      fecha: new Date().toLocaleString()
     });
-    console.log("Guardado en Firebase");
+
+    console.log("Apuesta guardada 🔥");
   } catch (e) {
     console.error("Error:", e);
   }
 };
 
-// 📊 HISTORIAL LOCAL
-function guardarHistorialLocal(monto) {
-  let historial = JSON.parse(localStorage.getItem("historial")) || [];
-
-  historial.push({
-    monto: monto,
-    fecha: new Date().toLocaleString()
-  });
-
-  localStorage.setItem("historial", JSON.stringify(historial));
-
-  mostrarHistorial();
-}
-
+// 📊 HISTORIAL
 function mostrarHistorial() {
   let historial = JSON.parse(localStorage.getItem("historial")) || [];
   let lista = document.getElementById("historial");
@@ -96,7 +106,7 @@ function mostrarHistorial() {
 
   historial.forEach(apuesta => {
     let item = document.createElement("li");
-    item.textContent = `Apuesta: $${apuesta.monto} - ${apuesta.fecha}`;
+    item.textContent = `${apuesta.partido} - $${apuesta.monto} - ${apuesta.fecha}`;
     lista.appendChild(item);
   });
 }
