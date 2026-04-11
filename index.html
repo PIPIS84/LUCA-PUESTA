@@ -1,4 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Luca Apuesta</title>
+</head>
+<body>
+
+<h1>💰 Luca Apuesta</h1>
+
+<h2>Saldo: $<span id="saldo">0</span></h2>
+
+<input type="number" id="monto" placeholder="Monto de apuesta">
+<button onclick="hacerApuesta()">Apostar</button>
+
+<h2>Historial</h2>
+<ul id="historial"></ul>
+
 <script type="module">
+// 🔥 FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 
@@ -14,7 +33,36 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.guardarApuestaFirebase = async function(monto) {
+// 💰 SALDO
+let saldo = localStorage.getItem("saldo")
+  ? parseFloat(localStorage.getItem("saldo"))
+  : 1000;
+
+document.getElementById("saldo").innerText = saldo.toFixed(2);
+
+// 🚀 HACER APUESTA
+window.hacerApuesta = async function() {
+  let monto = parseFloat(document.getElementById("monto").value);
+
+  if (!monto || monto <= 0) {
+    alert("Ingresa un monto válido");
+    return;
+  }
+
+  if (monto > saldo) {
+    alert("Saldo insuficiente");
+    return;
+  }
+
+  saldo -= monto;
+
+  localStorage.setItem("saldo", saldo);
+
+  document.getElementById("saldo").innerText = saldo.toFixed(2);
+
+  guardarHistorialLocal(monto);
+
+  // 🔥 GUARDAR EN FIREBASE
   try {
     await addDoc(collection(db, "apuestas"), {
       monto: monto,
@@ -25,4 +73,37 @@ window.guardarApuestaFirebase = async function(monto) {
     console.error("Error:", e);
   }
 };
+
+// 📊 HISTORIAL LOCAL
+function guardarHistorialLocal(monto) {
+  let historial = JSON.parse(localStorage.getItem("historial")) || [];
+
+  historial.push({
+    monto: monto,
+    fecha: new Date().toLocaleString()
+  });
+
+  localStorage.setItem("historial", JSON.stringify(historial));
+
+  mostrarHistorial();
+}
+
+function mostrarHistorial() {
+  let historial = JSON.parse(localStorage.getItem("historial")) || [];
+  let lista = document.getElementById("historial");
+
+  lista.innerHTML = "";
+
+  historial.forEach(apuesta => {
+    let item = document.createElement("li");
+    item.textContent = `Apuesta: $${apuesta.monto} - ${apuesta.fecha}`;
+    lista.appendChild(item);
+  });
+}
+
+mostrarHistorial();
+
 </script>
+
+</body>
+</html>
