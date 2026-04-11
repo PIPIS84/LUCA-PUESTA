@@ -3,88 +3,135 @@
 <head>
   <title>LUCA APUESTA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
-      background: #0a0a0a;
-      color: white;
+      margin: 0;
       font-family: Arial;
-      padding: 20px;
+      background: linear-gradient(135deg, #0a0a0a, #001f1f);
+      color: white;
     }
+
     h1 {
       text-align: center;
       color: #00ffcc;
+      margin-top: 10px;
     }
+
+    .container {
+      padding: 15px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 0 10px rgba(0,255,204,0.2);
+    }
+
     .saldo {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
       background: #00ffcc;
       color: black;
       padding: 10px;
       border-radius: 10px;
+    }
+
+    .stats {
+      font-size: 13px;
       text-align: center;
-      margin-bottom: 20px;
-      font-weight: bold;
+      margin-bottom: 10px;
+      color: #00ffcc;
     }
-    .match, .bet {
-      background: #1a1a1a;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
+
+    .match h3 {
+      margin: 0;
     }
-    button {
+
+    .ia {
+      font-size: 13px;
+      margin: 5px 0;
+      color: #00ffcc;
+    }
+
+    input {
       padding: 10px;
-      margin: 5px;
+      width: 100%;
+      border-radius: 10px;
       border: none;
-      border-radius: 8px;
-      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 10px;
     }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      flex: 1;
+      margin: 3px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
     .btn-apostar {
       background: #00ffcc;
       color: black;
     }
+
     .ganar {
       background: green;
       color: white;
     }
+
     .perder {
       background: red;
       color: white;
     }
-    input {
-      padding: 10px;
-      width: 100px;
-      border-radius: 8px;
-      border: none;
-      margin-top: 10px;
-    }
-    .ia {
-      margin-top: 10px;
-      font-size: 14px;
+
+    h2 {
+      margin-top: 20px;
       color: #00ffcc;
     }
   </style>
 </head>
+
 <body>
 
-<div class="saldo" id="stats"></div>
+<h1>⚽ LUCA APUESTA</h1>
 
-<h1>LUCA APUESTA ⚽</h1>
+<div class="container">
 
-<div class="saldo" id="saldo"></div>
+  <div class="stats" id="stats"></div>
+  <div class="saldo" id="saldo"></div>
 
-<h2>Partidos</h2>
-<div id="matches"></div>
+  <h2>Partidos</h2>
+  <div id="matches"></div>
 
-<h2>Mis Apuestas</h2>
-<div id="bets"></div>
+  <h2>Mis Apuestas</h2>
+  <div id="bets"></div>
+
+</div>
 
 <script>
-// 🔹 PARTIDOS
 const partidos = [
   { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1] },
   { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5] },
   { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9] }
 ];
 
-// 🔹 SALDO
 let saldoGuardado = localStorage.getItem("saldo");
 let saldo = saldoGuardado !== null ? parseFloat(saldoGuardado) : 1000;
 
@@ -94,7 +141,7 @@ const matchesDiv = document.getElementById("matches");
 const betsDiv = document.getElementById("bets");
 const saldoDiv = document.getElementById("saldo");
 
-// 🔹 IA PROBABILIDAD
+// IA
 function calcularProbabilidad(cuota) {
   let probBase = 100 / cuota;
   let forma = Math.random() * 20 - 10;
@@ -108,7 +155,13 @@ function calcularProbabilidad(cuota) {
   return probFinal.toFixed(1);
 }
 
-// 🔹 STATS
+function getRecomendacion(prob) {
+  if (prob >= 70) return "🔥 Apuesta fuerte";
+  if (prob >= 60) return "⚠️ Riesgo medio";
+  return "❌ Evitar";
+}
+
+// STATS
 function calcularStats() {
   let totalApostado = 0;
   let totalGanado = 0;
@@ -134,82 +187,56 @@ function calcularStats() {
   const profit = (totalGanado - totalApostado).toFixed(2);
 
   document.getElementById("stats").innerHTML = `
-    Apostado: $${totalApostado} |
-    Ganado: $${totalGanado} |
-    Profit: $${profit} |
-    Winrate: ${winrate}%
+    Apostado: $${totalApostado} | Ganado: $${totalGanado} | Profit: $${profit} | Winrate: ${winrate}%
   `;
 }
 
-// 🔹 SALDO UI
 function actualizarSaldo() {
   saldoDiv.innerHTML = `Saldo: $${saldo}`;
 }
 
-// 🔹 IA RECOMENDACIÓN
-function getRecomendacion(prob) {
-  if (prob >= 70) return "🔥 Apuesta fuerte";
-  if (prob >= 60) return "⚠️ Riesgo medio";
-  return "❌ Evitar";
-}
-
-// 🔹 RENDER PARTIDOS (CON IA)
+// PARTIDOS
 function renderPartidos() {
   matchesDiv.innerHTML = "";
 
   partidos.forEach((p) => {
-    const probDinamica = calcularProbabilidad(p.cuotas[0]);
-    const recomendacion = getRecomendacion(probDinamica);
+    const prob = calcularProbabilidad(p.cuotas[0]);
+    const recomendacion = getRecomendacion(prob);
 
     const div = document.createElement("div");
-    div.className = "match";
+    div.className = "card match";
 
     div.innerHTML = `
       <h3>${p.equipos}</h3>
-      <p class="ia">Probabilidad IA: ${probDinamica}% | ${recomendacion}</p>
+      <p class="ia">${prob}% | ${recomendacion}</p>
 
       <input type="number" id="monto-${p.equipos}" placeholder="Monto $" />
-      <br>
 
-      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">Local (${p.cuotas[0]})</button>
-      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">Empate (${p.cuotas[1]})</button>
-      <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">Visitante (${p.cuotas[2]})</button>
+      <div class="buttons">
+        <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Local', ${p.cuotas[0]})">L</button>
+        <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Empate', ${p.cuotas[1]})">E</button>
+        <button class="btn-apostar" onclick="apostar('${p.equipos}', 'Visitante', ${p.cuotas[2]})">V</button>
+      </div>
     `;
 
     matchesDiv.appendChild(div);
   });
 }
 
-// 🔹 APOSTAR
+// APOSTAR
 function apostar(partido, tipo, cuota) {
   const montoInput = document.getElementById(`monto-${partido}`);
   const monto = parseFloat(montoInput.value);
 
-  if (!monto || monto <= 0) {
-    alert("Ingresa un monto válido");
-    return;
-  }
-
-  if (monto > saldo) {
-    alert("Saldo insuficiente");
-    return;
-  }
+  if (!monto || monto <= 0) return alert("Monto inválido");
+  if (monto > saldo) return alert("Saldo insuficiente");
 
   saldo -= monto;
   localStorage.setItem("saldo", saldo);
 
   const ganancia = (monto * cuota).toFixed(2);
 
-  const apuesta = {
-    partido,
-    tipo,
-    cuota,
-    monto,
-    ganancia,
-    estado: "pendiente"
-  };
-
-  apuestas.push(apuesta);
+  apuestas.push({ partido, tipo, cuota, monto, ganancia, estado: "pendiente" });
   localStorage.setItem("apuestas", JSON.stringify(apuestas));
 
   actualizarSaldo();
@@ -219,9 +246,9 @@ function apostar(partido, tipo, cuota) {
   montoInput.value = "";
 }
 
-// 🔹 RESOLVER
+// RESOLVER
 function resolverApuesta(index, resultado) {
-  const apuesta = apuestas[index;
+  const apuesta = apuestas[index];
 
   if (apuesta.estado !== "pendiente") return;
 
@@ -240,26 +267,25 @@ function resolverApuesta(index, resultado) {
   calcularStats();
 }
 
-// 🔹 RENDER APUESTAS
+// APUESTAS
 function renderApuestas() {
   betsDiv.innerHTML = "";
 
   apuestas.forEach((a, i) => {
     const div = document.createElement("div");
-    div.className = "bet";
+    div.className = "card";
 
     div.innerHTML = `
-      <p><strong>${a.partido}</strong></p>
-      <p>${a.tipo} | Cuota: ${a.cuota}</p>
-      <p>Monto: $${a.monto}</p>
-      <p>Ganancia: $${a.ganancia}</p>
-      <p>Estado: ${a.estado}</p>
+      <strong>${a.partido}</strong><br>
+      ${a.tipo} | Cuota ${a.cuota}<br>
+      $${a.monto} → $${a.ganancia}<br>
+      Estado: ${a.estado}<br>
 
       ${
         a.estado === "pendiente"
           ? `
-        <button class="ganar" onclick="resolverApuesta(${i}, 'ganada')">Gané</button>
-        <button class="perder" onclick="resolverApuesta(${i}, 'perdida')">Perdí</button>
+        <button class="ganar" onclick="resolverApuesta(${i}, 'ganada')">✔</button>
+        <button class="perder" onclick="resolverApuesta(${i}, 'perdida')">✖</button>
       `
           : ""
       }
@@ -269,7 +295,7 @@ function renderApuestas() {
   });
 }
 
-// 🔹 INIT
+// INIT
 actualizarSaldo();
 renderPartidos();
 renderApuestas();
