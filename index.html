@@ -62,7 +62,9 @@
     }
   </style>
 </head>
-<body><div class="saldo" id="stats"></div>
+<body>
+
+<div class="saldo" id="stats"></div>
 
 <h1>LUCA APUESTA ⚽</h1>
 
@@ -74,7 +76,26 @@
 <h2>Mis Apuestas</h2>
 <div id="bets"></div>
 
-<script>function calcularStats() {
+<script>
+// 🔹 PARTIDOS
+const partidos = [
+  { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1], prob: 72 },
+  { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5], prob: 65 },
+  { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9], prob: 55 }
+];
+
+// 🔹 SALDO (CORREGIDO)
+let saldoGuardado = localStorage.getItem("saldo");
+let saldo = saldoGuardado !== null ? parseFloat(saldoGuardado) : 1000;
+
+let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
+
+const matchesDiv = document.getElementById("matches");
+const betsDiv = document.getElementById("bets");
+const saldoDiv = document.getElementById("saldo");
+
+// 🔹 STATS
+function calcularStats() {
   let totalApostado = 0;
   let totalGanado = 0;
   let ganadas = 0;
@@ -105,30 +126,20 @@
     Winrate: ${winrate}%
   `;
 }
-const partidos = [
-  { equipos: "Real Madrid vs Barcelona", cuotas: [1.8, 3.5, 2.1], prob: 72 },
-  { equipos: "Manchester City vs Arsenal", cuotas: [1.6, 3.8, 2.5], prob: 65 },
-  { equipos: "PSG vs Bayern", cuotas: [2.0, 3.2, 1.9], prob: 55 }
-];
 
-// SALDO
-let saldo = parseFloat(localStorage.getItem("saldo")) || 1000;
-let apuestas = JSON.parse(localStorage.getItem("apuestas")) || [];
-
-const matchesDiv = document.getElementById("matches");
-const betsDiv = document.getElementById("bets");
-const saldoDiv = document.getElementById("saldo");
-
+// 🔹 SALDO UI
 function actualizarSaldo() {
   saldoDiv.innerHTML = `Saldo: $${saldo}`;
 }
 
+// 🔹 IA SIMPLE
 function getRecomendacion(prob) {
   if (prob >= 70) return "🔥 Apuesta fuerte";
   if (prob >= 60) return "⚠️ Riesgo medio";
   return "❌ Evitar";
 }
 
+// 🔹 RENDER PARTIDOS
 function renderPartidos() {
   matchesDiv.innerHTML = "";
 
@@ -154,6 +165,7 @@ function renderPartidos() {
   });
 }
 
+// 🔹 APOSTAR (CORREGIDO)
 function apostar(partido, tipo, cuota) {
   const montoInput = document.getElementById(`monto-${partido}`);
   const monto = parseFloat(montoInput.value);
@@ -187,9 +199,12 @@ function apostar(partido, tipo, cuota) {
 
   actualizarSaldo();
   renderApuestas();
+  calcularStats(); // ✅ AQUÍ AGREGADO
+
   montoInput.value = "";
 }
 
+// 🔹 RESOLVER APUESTA (CORREGIDO)
 function resolverApuesta(index, resultado) {
   const apuesta = apuestas[index];
 
@@ -207,8 +222,10 @@ function resolverApuesta(index, resultado) {
 
   actualizarSaldo();
   renderApuestas();
+  calcularStats(); // ✅ AQUÍ AGREGADO
 }
 
+// 🔹 RENDER APUESTAS
 function renderApuestas() {
   betsDiv.innerHTML = "";
 
@@ -237,7 +254,7 @@ function renderApuestas() {
   });
 }
 
-// INIT
+// 🔹 INIT
 actualizarSaldo();
 renderPartidos();
 renderApuestas();
