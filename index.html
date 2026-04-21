@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Luca Apuesta</title>
+  <title>Luca Apuesta PRO</title>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -10,14 +10,11 @@
 </head>
 <body>
 
-<h1>💰 Luca Apuesta</h1>
+<h1>💰 Luca Apuesta PRO</h1>
 
 <h2>Saldo: $<span id="saldo">0</span></h2>
 
 <input type="number" id="monto" placeholder="Monto de apuesta">
-
-<br><br>
-<button onclick="limpiarHistorial()">🧹 Limpiar historial (corregir errores viejos)</button>
 
 <h2>⚽ Partidos disponibles</h2>
 
@@ -31,7 +28,7 @@
   <button onclick="apostarPartido('Manchester City vs Liverpool', 1.8)">Apostar</button>
 </div>
 
-<h2>📊 Historial</h2>
+<h2>📊 Historial (Tiempo Real)</h2>
 <ul id="historial"></ul>
 
 <script>
@@ -48,14 +45,50 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 
-// 💰 SALDO
-var saldo = localStorage.getItem("saldo")
-  ? parseFloat(localStorage.getItem("saldo"))
-  : 1000;
+// 📌 REFERENCIA USUARIO (simple por ahora)
+var userId = "usuario_demo";
 
-document.getElementById("saldo").innerText = saldo.toFixed(2);
+// 📊 REFERENCIAS
+var saldoRef = db.collection("usuarios").doc(userId);
+var apuestasRef = db.collection("apuestas");
 
-// ⚽ APOSTAR
+// 🟢 CREAR USUARIO SI NO EXISTE
+saldoRef.get().then(function(doc) {
+  if (!doc.exists) {
+    saldoRef.set({ saldo: 1000 });
+  }
+});
+
+// 🔄 ESCUCHAR SALDO EN TIEMPO REAL
+saldoRef.onSnapshot(function(doc) {
+  if (doc.exists) {
+    document.getElementById("saldo").innerText = doc.data().saldo.toFixed(2);
+  }
+});
+
+// 🔄 ESCUCHAR HISTORIAL EN TIEMPO REAL
+apuestasRef
+  .where("userId", "==", userId)
+  .orderBy("timestamp", "desc")
+  .onSnapshot(function(snapshot) {
+
+    var lista = document.getElementById("historial");
+    lista.innerHTML = "";
+
+    snapshot.forEach(function(doc) {
+      var a = doc.data();
+
+      var item = document.createElement("li");
+      item.textContent =
+        (a.partido || "Sin nombre") +
+        " - $" + (a.monto || 0) +
+        " - " + (a.fecha || "");
+
+      lista.appendChild(item);
+    });
+  });
+
+// ⚽ APOSTAR (TRANSACCIÓN REAL)
 function apostarPartido(partido, cuota) {
   var monto = parseFloat(document.getElementById("monto").value);
 
@@ -64,74 +97,43 @@ function apostarPartido(partido, cuota) {
     return;
   }
 
-  if (monto > saldo) {
-    alert("Saldo insuficiente");
-    return;
-  }
+  db.runTransaction(function(transaction) {
+    return transaction.get(saldoRef).then(function(doc) {
 
-  saldo -= monto;
+      var saldoActual = doc.data().saldo;
 
-  localStorage.setItem("saldo", saldo);
-  document.getElementById("saldo").innerText = saldo.toFixed(2);
+      if (monto > saldoActual) {
+        throw "Saldo insuficiente";
+      }
 
-  // 📊 Historial seguro
-  var historial = JSON.parse(localStorage.getItem("historial")) || [];
+      var nuevoSaldo = saldoActual - monto;
 
-  historial.push({
-    partido: partido || "Partido desconocido",
-    monto: monto || 0,
-    fecha: new Date().toLocaleString()
-  });
+      // 🔽 Actualizar saldo
+      transaction.update(saldoRef, { saldo: nuevoSaldo });
 
-  localStorage.setItem("historial", JSON.stringify(historial));
-  mostrarHistorial();
+      // 🔽 Guardar apuesta
+      var nuevaApuestaRef = apuestasRef.doc();
 
-  // 🔥 Firebase
-  db.collection("apuestas").add({
-    partido: partido || "Partido desconocido",
-    cuota: cuota,
-    monto: monto || 0,
-    posible_ganancia: (monto || 0) * cuota,
-    estado: "pendiente",
-    fecha: new Date().toLocaleString()
+      transaction.set(nuevaApuestaRef, {
+        userId: userId,
+        partido: partido || "Partido desconocido",
+        cuota: cuota,
+        monto: monto,
+        posible_ganancia: monto * cuota,
+        estado: "pendiente",
+        fecha: new Date().toLocaleString(),
+        timestamp: new Date()
+      });
+
+    });
   })
   .then(function() {
-    console.log("Guardado 🔥");
+    console.log("Apuesta realizada 🔥");
   })
   .catch(function(error) {
-    console.error("Error:", error);
+    alert(error);
   });
 }
-
-// 📊 MOSTRAR HISTORIAL (mejorado)
-function mostrarHistorial() {
-  var historial = JSON.parse(localStorage.getItem("historial")) || [];
-  var lista = document.getElementById("historial");
-
-  lista.innerHTML = "";
-
-  historial.forEach(function(apuesta) {
-    var item = document.createElement("li");
-
-    item.textContent =
-      (apuesta.partido || "Sin nombre") +
-      " - $" + (apuesta.monto || 0) +
-      " - " + (apuesta.fecha || "");
-
-    lista.appendChild(item);
-  });
-}
-
-// 🧹 LIMPIAR HISTORIAL (para quitar "undefined")
-function limpiarHistorial() {
-  if (confirm("Esto borrará apuestas con errores. ¿Continuar?")) {
-    localStorage.removeItem("historial");
-    mostrarHistorial();
-  }
-}
-
-// Cargar historial al inicio
-mostrarHistorial();
 
 </script>
 
