@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Luca Apuesta</title>
 
-  <!-- Firebase versión simple -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
@@ -15,6 +15,9 @@
 <h2>Saldo: $<span id="saldo">0</span></h2>
 
 <input type="number" id="monto" placeholder="Monto de apuesta">
+
+<br><br>
+<button onclick="limpiarHistorial()">🧹 Limpiar historial (corregir errores viejos)</button>
 
 <h2>⚽ Partidos disponibles</h2>
 
@@ -34,7 +37,7 @@
 <script>
 // 🔥 CONFIG FIREBASE
 var firebaseConfig = {
-  apiKey: "AIzaSyB2Lq6GBCU5X9XuK3CbdrXpUQ2EWVs8VN0",
+  apiKey: "AIzaSy...",
   authDomain: "luca-apuesta.firebaseapp.com",
   projectId: "luca-apuesta",
   storageBucket: "luca-apuesta.firebasestorage.app",
@@ -71,22 +74,24 @@ function apostarPartido(partido, cuota) {
   localStorage.setItem("saldo", saldo);
   document.getElementById("saldo").innerText = saldo.toFixed(2);
 
-  // Historial local
+  // 📊 Historial seguro
   var historial = JSON.parse(localStorage.getItem("historial")) || [];
+
   historial.push({
-    partido: partido,
-    monto: monto,
+    partido: partido || "Partido desconocido",
+    monto: monto || 0,
     fecha: new Date().toLocaleString()
   });
+
   localStorage.setItem("historial", JSON.stringify(historial));
   mostrarHistorial();
 
   // 🔥 Firebase
   db.collection("apuestas").add({
-    partido: partido,
+    partido: partido || "Partido desconocido",
     cuota: cuota,
-    monto: monto,
-    posible_ganancia: monto * cuota,
+    monto: monto || 0,
+    posible_ganancia: (monto || 0) * cuota,
     estado: "pendiente",
     fecha: new Date().toLocaleString()
   })
@@ -98,7 +103,7 @@ function apostarPartido(partido, cuota) {
   });
 }
 
-// 📊 HISTORIAL
+// 📊 MOSTRAR HISTORIAL (mejorado)
 function mostrarHistorial() {
   var historial = JSON.parse(localStorage.getItem("historial")) || [];
   var lista = document.getElementById("historial");
@@ -107,11 +112,25 @@ function mostrarHistorial() {
 
   historial.forEach(function(apuesta) {
     var item = document.createElement("li");
-    item.textContent = apuesta.partido + " - $" + apuesta.monto + " - " + apuesta.fecha;
+
+    item.textContent =
+      (apuesta.partido || "Sin nombre") +
+      " - $" + (apuesta.monto || 0) +
+      " - " + (apuesta.fecha || "");
+
     lista.appendChild(item);
   });
 }
 
+// 🧹 LIMPIAR HISTORIAL (para quitar "undefined")
+function limpiarHistorial() {
+  if (confirm("Esto borrará apuestas con errores. ¿Continuar?")) {
+    localStorage.removeItem("historial");
+    mostrarHistorial();
+  }
+}
+
+// Cargar historial al inicio
 mostrarHistorial();
 
 </script>
